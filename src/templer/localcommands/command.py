@@ -1,5 +1,5 @@
 """
-ZopeSkel local command. 
+ZopeSkel local command.
 
 Most of the code is a copy/paste from paste.script module
 """
@@ -20,30 +20,33 @@ class TemplerLocalCommand(command.Command):
     group_name = "Templer local commands"
 
     parser = command.Command.standard_parser(verbose=True)
-    parser.add_option('-l', '--list',
-                      action='store_true',
-                      dest='listcontents',
-                      help="List available templates for the current project")
+    parser.add_option(
+        '-l', '--list',
+        action='store_true',
+        dest='listcontents',
+        help="List available templates for the current project")
 
-    parser.add_option('-a', '--list-all',
-                      action='store_true',
-                      dest='listallcontents',
-                      help="List all templates regardless of the current project")
+    parser.add_option(
+        '-a', '--list-all',
+        action='store_true',
+        dest='listallcontents',
+        help="List all templates regardless of the current project")
 
-    parser.add_option('-q', '--no-interactive',
-                      action="count",
-                      dest="no_interactive",
-                      default=0)    
+    parser.add_option(
+        '-q', '--no-interactive',
+        action="count",
+        dest="no_interactive",
+        default=0)
 
     template_vars = {}
-    
+
     def command(self):
         """
         command method
         """
         self.interactive = 1
         options, args = self.options, self.args
-        
+
         if options.listcontents:
             self._list_sub_templates()
             return
@@ -62,9 +65,9 @@ class TemplerLocalCommand(command.Command):
         (self.template_vars['namespace_package'],
          self.template_vars['namespace_package2'],
          self.template_vars['package']) = self.get_parent_namespace_packages()
-        
+
         dest_dir = self.dest_dir()
-        
+
         templates = []
         self._extend_templates(templates, args[0])
 
@@ -76,8 +79,7 @@ class TemplerLocalCommand(command.Command):
             if self.verbose:
                 print 'Creating template %s' % tmpl.name
             tmpl.run(self, dest_dir, self.template_vars)
-        
-    
+
     def dest_dir(self):
         dest_dir = os.path.join(
                    os.path.dirname(
@@ -86,7 +88,7 @@ class TemplerLocalCommand(command.Command):
                                    self.template_vars['namespace_package2'],
                                    self.template_vars['package'])
         return dest_dir
-    
+
     def get_parent_namespace_packages(self):
         """
         return the project namespaces and package name.
@@ -106,12 +108,12 @@ class TemplerLocalCommand(command.Command):
         namespace_package2 = ''
         if len(packages) == 2:
             namespace_package2 = packages[1]
-        ( dirpath, dirnames, filenames) = os.walk(os.path.join(
+        (dirpath, dirnames, filenames) = os.walk(os.path.join(
                                             os.path.dirname(egg_info),
                                                     namespace_package,
                                                     namespace_package2)).next()
-        # Get the package dir because we usually want to issue the 
-        # localcommand in the package dir. 
+        # Get the package dir because we usually want to issue the
+        # localcommand in the package dir.
         package = os.path.basename(os.path.abspath(os.path.curdir))
 
         # If the package dir is not in the list of inner_packages,
@@ -122,7 +124,9 @@ class TemplerLocalCommand(command.Command):
         if package not in inner_packages:
             package = inner_packages[0]
             if len(inner_packages) > 1:
-                package = self.challenge('Please choose one package to inject content into %s' % inner_packages)
+                package = self.challenge(
+                    'Please choose one package to inject content into %s' %\
+                    inner_packages)
 
         return namespace_package, namespace_package2, package
 
@@ -134,14 +138,17 @@ class TemplerLocalCommand(command.Command):
         parent_template = None
 
         egg_info_dir = pluginlib.find_egg_info_dir(os.getcwd())
-        setup_cfg = os.path.join(os.path.dirname(egg_info_dir), 'setup.cfg')
+        src_path = os.path.dirname(egg_info_dir)
+        setup_path = os.path.sep.join(src_path.split(os.path.sep)[:-1])
+        setup_cfg = os.path.join(setup_path, 'setup.cfg')
 
         parent_template = None
         if os.path.exists(setup_cfg):
             parser = ConfigParser.ConfigParser()
             parser.read(setup_cfg)
             try:
-                parent_template = parser.get('templer.local', 'template') or None
+                parent_template =\
+                    parser.get('templer.local', 'template') or None
             except:
                 pass
 
@@ -165,7 +172,7 @@ class TemplerLocalCommand(command.Command):
 
         max_name = max([len(t.name) for t in templates])
         templates.sort(lambda a, b: cmp(a.name, b.name))
- 
+
         for template in templates:
             _marker = " "
             if not template.parent_templates:
