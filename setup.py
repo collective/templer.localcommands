@@ -13,6 +13,11 @@ long_description = (
     open('CHANGES.txt').read()
     + '\n')
 
+tests_require = [
+    'templer.plone',
+    'templer.zope',
+    'templer.buildout', ]
+
 setup(name='templer.localcommands',
       version=version,
       description="Templer system framework for local commands",
@@ -49,6 +54,7 @@ setup(name='templer.localcommands',
           'setuptools',
           'templer.core',
       ],
+      extras_require=dict(test=tests_require),
       entry_points="""
       [paste.paster_command]
       add = templer.localcommands:TemplerLocalCommand
