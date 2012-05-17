@@ -4,5 +4,11 @@ Changelog
 0.1a-dev (unreleased)
 ---------------------
 
+- Add TemplerLocalCommand and TemplerLocalTemplate base classes, modelled
+  on the local command and template classes from zopeskel, with fixes
+  [cewing]
+
+- Add tests for local command instance methods
+
 - Package created using templer
   [cewing]
