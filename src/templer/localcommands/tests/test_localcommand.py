@@ -10,9 +10,10 @@ from templer.core.tests.test_templates import paster
 from templer.core.tests.test_templates import clean_working_set
 from templer.localcommands import TemplerLocalCommand
 
+
 class TestLocalCommands(unittest.TestCase):
     """exercise the functions of the TemplerLocalCommand class"""
-    
+
     def setUp(self):
         """create a temporary directory, cd to it for the duration of the test
         """
@@ -20,7 +21,7 @@ class TestLocalCommands(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
         # TODO: I am bothered by the fact that this depends on infrastructure
         # built by the buildout for this package.  If the dev environment is
-        # different in some way, this is very brittle.  Is there a way to 
+        # different in some way, this is very brittle.  Is there a way to
         # make the 'paster' shell script available to be run in a shell like
         # we are using it below?
         cmdpath = ['bin', 'paster']
