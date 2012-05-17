@@ -81,29 +81,34 @@ class TemplerLocalCommand(command.Command):
             tmpl.run(self, dest_dir, self.template_vars)
 
     def dest_dir(self):
+        ns_pkg, ns_pkg2, pkg = self.get_parent_namespace_packages()
         dest_dir = os.path.join(
-                   os.path.dirname(
-                       pluginlib.find_egg_info_dir(os.getcwd())),
-                                   self.template_vars['namespace_package'],
-                                   self.template_vars['namespace_package2'],
-                                   self.template_vars['package'])
+            os.path.dirname(pluginlib.find_egg_info_dir(os.getcwd())),
+            ns_pkg, ns_pkg2, pkg)
         return dest_dir
 
-    def get_parent_namespace_packages(self):
-        """
-        return the project namespaces and package name.
-        This method can be a function
-        """
-        egg_info = pluginlib.find_egg_info_dir(os.getcwd())
+    def get_egg_info_dir(self):
+        return pluginlib.find_egg_info_dir(os.getcwd())
 
+    def get_namespaces_from_egginfo(self):
+        """read the egg-info directory to find our current packages"""
+        egg_info = self.get_egg_info_dir()
         hfile = open(os.path.join(egg_info, 'namespace_packages.txt'))
         packages = [l.strip() for l in hfile.readlines()
                     if l.strip() and not l.strip().startswith('#')]
         hfile.close()
 
         packages.sort(lambda x, y: -cmp(len(x), len(y)))
-        packages = packages[0].split('.')
+        namespaces = packages[0].split('.')
+        return namespaces
 
+    def get_parent_namespace_packages(self):
+        """
+        return the project namespaces and package name.
+        This method can be a function
+        """
+        egg_info = self.get_egg_info_dir()
+        packages = self.get_namespaces_from_egginfo()
         namespace_package = packages[0]
         namespace_package2 = ''
         if len(packages) == 2:
