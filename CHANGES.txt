@@ -9,6 +9,7 @@ Changelog
   [cewing]
 
 - Add tests for local command instance methods
+  [cewing]
 
 - Package created using templer
   [cewing]

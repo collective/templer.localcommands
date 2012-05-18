@@ -12,3 +12,7 @@ example if you wish to enable the local commands available for the templates
 in the templer.plone package, you would reference the package thus::
 
     templer.plone[localcommands]
+
+This flexibility allows more advanced users to use lighter, more flexible 
+templates, while also supporting new users with templates that help them to 
+get started more quickly.
