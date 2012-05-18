@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-version = '1.0a-dev'
+version = '1.0b1'
 
 long_description = (
     open('README.txt').read()
@@ -25,10 +25,15 @@ setup(name='templer.localcommands',
       # Get more strings from
       # http://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
-          "Development Status :: 3 - Alpha",
+          "Development Status :: 4 - Beta",
+          "Environment :: Console",
           "Framework :: Zope2",
           "Framework :: Zope3",
           "Framework :: Plone",
+          "Framework :: Plone :: 3.2",
+          "Framework :: Plone :: 3.3",
+          "Framework :: Plone :: 4.0",
+          "Framework :: Plone :: 4.1",
           "Framework :: Buildout",
           "Intended Audience :: Developers",
           "License :: OSI Approved :: MIT License",
@@ -41,9 +46,9 @@ setup(name='templer.localcommands',
           "Topic :: Software Development :: Code Generators",
       ],
       keywords='',
-      author='',
-      author_email='',
-      url='http://svn.plone.org/svn/collective/templer.localcommands',
+      author='Cris Ewing',
+      author_email='cris@crisewing.com',
+      url='https://github.com/collective/templer.localcommands',
       license='MIT',
       packages=find_packages('src'),
       package_dir = {'': 'src'},
