@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.1b2 May 20, 2012
+------------------
+
+- Fix packaging error
+  [cewing]
+
 0.1b1 May 17, 2012
 ------------------
 
