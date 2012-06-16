@@ -1,7 +1,6 @@
 import os
 import re
 import shutil
-import sys
 import tempfile
 import unittest2 as unittest
 
@@ -43,7 +42,7 @@ class TestLocalCommands(unittest.TestCase):
     def test_add_not_generally_available(self):
         cmd_pattern = r"^\s*add"
         help_text = read_sh(self.cmd + ' help')
-        matches = re.search(cmd_pattern, help_text, re.I|re.M)
+        matches = re.search(cmd_pattern, help_text, re.I | re.M)
         self.assertEquals(matches, None, "add command should not be present")
 
     def test_add_available_with_package(self):
@@ -56,7 +55,7 @@ class TestLocalCommands(unittest.TestCase):
         os.chdir(os.path.sep.join(['plone.example', 'src']))
         cmd_pattern = r"^\s*add"
         help_text = read_sh(self.cmd + ' help')
-        matches = re.search(cmd_pattern, help_text, re.I|re.M)
+        matches = re.search(cmd_pattern, help_text, re.I | re.M)
         self.assertTrue(matches is not None, 'add command should be present')
 
     def test_get_namespaces_from_egginfo(self):
