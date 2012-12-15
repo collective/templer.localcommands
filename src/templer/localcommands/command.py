@@ -40,6 +40,9 @@ class TemplerLocalCommand(Command):
 
     template_vars = {}
 
+    def __init__(self, command_name):
+        self.command_name = command_name
+
     def command(self):
         """
         command method
