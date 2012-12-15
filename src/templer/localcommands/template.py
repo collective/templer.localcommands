@@ -1,11 +1,11 @@
 import os
 import subprocess
 
-from paste.script import templates
-from paste.script import copydir
+from templer.core.base import Template
+from templer.core import copydir
 
 
-class TemplerLocalTemplate(templates.Template):
+class TemplerLocalTemplate(Template):
     """
     Base template class
     """

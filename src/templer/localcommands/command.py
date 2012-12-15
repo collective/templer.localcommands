@@ -7,11 +7,11 @@ Most of the code is a copy/paste from paste.script module
 import os
 import ConfigParser
 import pkg_resources
-from paste.script import command
-from paste.script import pluginlib
+from templer.core.create import Command
+from templer.core import pluginlib
 
 
-class TemplerLocalCommand(command.Command):
+class TemplerLocalCommand(Command):
     """paster command to add content skeleton to plone project"""
 
     max_args = 2
@@ -19,7 +19,7 @@ class TemplerLocalCommand(command.Command):
     summary = "Allows the addition of further templates to an existing package"
     group_name = "Templer local commands"
 
-    parser = command.Command.standard_parser(verbose=True)
+    parser = Command.standard_parser(verbose=True)
     parser.add_option(
         '-l', '--list',
         action='store_true',
