@@ -67,9 +67,8 @@ class TemplerLocalCommand(Command):
 
         (self.template_vars['namespace_package'],
          self.template_vars['namespace_package2'],
-         self.template_vars['package']) = self.get_parent_namespace_packages()
-
-        dest_dir = self.dest_dir()
+         dest_dir) = self.get_parent_namespace_packages()
+        self.template_vars['package'] = os.path.basename(dest_dir)
 
         templates = []
         self._extend_templates(templates, args[0])
@@ -83,60 +82,44 @@ class TemplerLocalCommand(Command):
                 print 'Creating template %s' % tmpl.name
             tmpl.run(self, dest_dir, self.template_vars)
 
-    def dest_dir(self):
-        ns_pkg, ns_pkg2, pkg = self.get_parent_namespace_packages()
-        dest_dir = os.path.join(
-            os.path.dirname(pluginlib.find_egg_info_dir(os.getcwd())),
-            ns_pkg, ns_pkg2, pkg)
-        return dest_dir
-
-    def get_egg_info_dir(self):
-        return pluginlib.find_egg_info_dir(os.getcwd())
-
-    def get_namespaces_from_egginfo(self):
-        """read the egg-info directory to find our current packages"""
-        egg_info = self.get_egg_info_dir()
-        hfile = open(os.path.join(egg_info, 'namespace_packages.txt'))
-        packages = [l.strip() for l in hfile.readlines()
-                    if l.strip() and not l.strip().startswith('#')]
-        hfile.close()
-
-        packages.sort(lambda x, y: -cmp(len(x), len(y)))
-        namespaces = packages[0].split('.')
-        return namespaces
-
     def get_parent_namespace_packages(self):
         """
         return the project namespaces and package name.
         This method can be a function
         """
-        egg_info = self.get_egg_info_dir()
-        packages = self.get_namespaces_from_egginfo()
-        namespace_package = packages[0]
+        namespace_package = ''
         namespace_package2 = ''
-        if len(packages) == 2:
-            namespace_package2 = packages[1]
-        (dirpath, dirnames, filenames) = os.walk(os.path.join(
-                                            os.path.dirname(egg_info),
-                                                    namespace_package,
-                                                    namespace_package2)).next()
-        # Get the package dir because we usually want to issue the
-        # localcommand in the package dir.
-        package = os.path.basename(os.path.abspath(os.path.curdir))
+        packages = []
+        # Find Python packages (identified by __init__.py)
+        for dirpath, dirnames, filenames in os.walk(os.getcwd()):
+            if '__init__.py' in filenames:
+                init_py = os.path.join(dirpath, '__init__.py')
+                basename = os.path.basename(dirpath)
+                # Heuristic to identify namespace packages
+                if 'declare_namespace' in open(init_py).read():
+                    if not namespace_package:
+                        namespace_package = basename
+                    elif not namespace_package2:
+                        namespace_package2 = basename
+                else:
+                    # Build a list of all non-namespace packages,
+                    # except for ones contained in another
+                    # non-namespace package. This includes e.g.
+                    # foo.bar but not foo.bar.tests, if foo is
+                    # the namespace.
+                    if os.path.relpath(os.path.dirname(dirpath)) in packages:
+                        continue
+                    packages.append(os.path.relpath(dirpath))
 
-        # If the package dir is not in the list of inner_packages,
-        # then:
-        #    if there is only one package in the list, we take it
-        #    else ask the user to pick a package from the list
-        inner_packages = [d for d in dirnames if d != '.svn']
-        if package not in inner_packages:
-            package = inner_packages[0]
-            if len(inner_packages) > 1:
-                package = self.challenge(
-                    'Please choose one package to inject content into %s' %\
-                    inner_packages)
+        # If more than one package is included in this distribution,
+        # make the user pick.
+        package = packages[0]
+        if len(packages) > 1:
+            package = self.challenge(
+                'Please choose one package to inject content into %s' %\
+                packages)
 
-        return namespace_package, namespace_package2, package
+        return namespace_package, namespace_package2, os.path.abspath(package)
 
     def _list_sub_templates(self, show_all=False):
         """
@@ -145,10 +128,7 @@ class TemplerLocalCommand(Command):
         templates = []
         parent_template = None
 
-        egg_info_dir = pluginlib.find_egg_info_dir(os.getcwd())
-        src_path = os.path.dirname(egg_info_dir)
-        setup_path = os.path.sep.join(src_path.split(os.path.sep)[:-1])
-        setup_cfg = os.path.join(setup_path, 'setup.cfg')
+        setup_cfg = os.path.join(os.getcwd(), 'setup.cfg')
 
         parent_template = None
         if os.path.exists(setup_cfg):

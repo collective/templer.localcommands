@@ -4,6 +4,13 @@ Changelog
 1.0b3 (unreleased)
 ------------------
 
+- Determine package namespaces, path, and parent template
+  without relying on setuptools egg-info. It is now assumed that
+  local commands are being run with the root of the package
+  (i.e. the folder that contains setup.py) as the current
+  working directory.
+  [davisagli]
+
 1.0b2 May 20, 2012
 ------------------
 
