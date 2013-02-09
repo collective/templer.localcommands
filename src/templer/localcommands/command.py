@@ -91,6 +91,7 @@ class TemplerLocalCommand(Command):
         namespace_package2 = ''
         packages = []
         # Find Python packages (identified by __init__.py)
+        base_path = os.getcwd()
         for dirpath, dirnames, filenames in os.walk(os.getcwd()):
             if '__init__.py' in filenames:
                 init_py = os.path.join(dirpath, '__init__.py')
@@ -99,17 +100,19 @@ class TemplerLocalCommand(Command):
                 if 'declare_namespace' in open(init_py).read():
                     if not namespace_package:
                         namespace_package = basename
+                        base_path = dirpath
                     elif not namespace_package2:
                         namespace_package2 = basename
+                        base_path = dirpath
                 else:
                     # Build a list of all non-namespace packages,
                     # except for ones contained in another
                     # non-namespace package. This includes e.g.
                     # foo.bar but not foo.bar.tests, if foo is
                     # the namespace.
-                    if os.path.relpath(os.path.dirname(dirpath)) in packages:
+                    if os.path.relpath(os.path.dirname(dirpath), base_path) in packages:
                         continue
-                    packages.append(os.path.relpath(dirpath))
+                    packages.append(os.path.relpath(dirpath), base_path)
 
         # If more than one package is included in this distribution,
         # make the user pick.
