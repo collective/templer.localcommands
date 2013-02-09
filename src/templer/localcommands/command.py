@@ -67,8 +67,8 @@ class TemplerLocalCommand(Command):
 
         (self.template_vars['namespace_package'],
          self.template_vars['namespace_package2'],
-         dest_dir) = self.get_parent_namespace_packages()
-        self.template_vars['package'] = os.path.basename(dest_dir)
+         self.template_vars['package']) = self.get_parent_namespace_packages()
+        dest_dir = os.path.abspath(self.template_vars['package'])
 
         templates = []
         self._extend_templates(templates, args[0])
@@ -119,7 +119,7 @@ class TemplerLocalCommand(Command):
                 'Please choose one package to inject content into %s' %\
                 packages)
 
-        return namespace_package, namespace_package2, os.path.abspath(package)
+        return namespace_package, namespace_package2, package
 
     def _list_sub_templates(self, show_all=False):
         """
