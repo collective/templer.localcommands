@@ -8,7 +8,6 @@ import os
 import ConfigParser
 import pkg_resources
 from templer.core.create import Command
-from templer.core import pluginlib
 
 
 class TemplerLocalCommand(Command):
@@ -112,7 +111,7 @@ class TemplerLocalCommand(Command):
                     # the namespace.
                     if os.path.relpath(os.path.dirname(dirpath), base_path) in packages:
                         continue
-                    packages.append(os.path.relpath(dirpath), base_path)
+                    packages.append(os.path.relpath(dirpath, base_path))
 
         # If more than one package is included in this distribution,
         # make the user pick.

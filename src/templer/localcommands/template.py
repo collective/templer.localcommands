@@ -60,7 +60,7 @@ class TemplerLocalTemplate(Template):
 
     def copy_dir(self, source, dest, vars, verbosity, simulate, indent=0,
                  use_cheetah=False, sub_vars=True, interactive=False,
-                 svn_add=True, overwrite=True, template_renderer=None):
+                 overwrite=True, template_renderer=None):
         """
         This method is a modified copy of paste.script.copy_dir
         """
@@ -75,8 +75,7 @@ class TemplerLocalTemplate(Template):
             if verbosity >= 1:
                 print '%sCreating %s/' % (pad, dest)
             if not simulate:
-                copydir.svn_makedirs(dest, svn_add=svn_add,
-                                     verbosity=verbosity, pad=pad)
+                copydir.makedirs(dest, verbosity=verbosity, pad=pad)
         elif verbosity >= 2:
             print '%sDirectory %s exists' % (pad, dest)
         for name in names:
@@ -101,7 +100,7 @@ class TemplerLocalTemplate(Template):
                 self.copy_dir(full, dest_full, vars, verbosity, simulate,
                          indent=indent+1, use_cheetah=use_cheetah,
                          sub_vars=sub_vars, interactive=interactive,
-                         svn_add=svn_add, template_renderer=template_renderer)
+                         template_renderer=template_renderer)
                 continue
             f = open(full, 'rb')
             content = f.read()
@@ -162,23 +161,3 @@ class TemplerLocalTemplate(Template):
                 f = open(dest_full, 'wb')
                 f.write(content)
                 f.close()
-            if svn_add and not already_exists:
-                if not os.path.exists(
-                           os.path.join(
-                               os.path.dirname(
-                                   os.path.abspath(dest_full)), '.svn')):
-                    if verbosity > 1:
-                        print '%s.svn/ does not exist; cannot add file' % pad
-                else:
-                    cmd = ['svn', 'add', dest_full]
-                    if verbosity > 1:
-                        print '%sRunning: %s' % (pad, ' '.join(cmd))
-                    if not simulate:
-                        # @@: Should
-                        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-                        stdout, stderr = proc.communicate()
-                        if verbosity > 1 and stdout:
-                            print 'Script output:'
-                            print stdout
-            elif svn_add and already_exists and verbosity > 1:
-                print '%sFile already exists (not doing svn add)' % pad
