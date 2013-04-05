@@ -66,8 +66,8 @@ class TemplerLocalCommand(Command):
 
         (self.template_vars['namespace_package'],
          self.template_vars['namespace_package2'],
-         self.template_vars['package']) = self.get_parent_namespace_packages()
-        dest_dir = os.path.abspath(self.template_vars['package'])
+         self.template_vars['package'],
+         dest_dir) = self.get_parent_namespace_packages()
 
         templates = []
         self._extend_templates(templates, args[0])
@@ -121,7 +121,14 @@ class TemplerLocalCommand(Command):
                 'Please choose one package to inject content into %s' %\
                 packages)
 
-        return namespace_package, namespace_package2, package
+        if namespace_package2:
+            subpath = "%s/%s/%s" % \
+                (namespace_package, namespace_package2, package)
+        else:
+            subpath = "%s/%s" % (namespace_package, package)
+        destination = os.path.abspath(subpath)
+
+        return namespace_package, namespace_package2, package, destination
 
     def _list_sub_templates(self, show_all=False):
         """
@@ -130,7 +137,7 @@ class TemplerLocalCommand(Command):
         templates = []
         parent_template = None
 
-        setup_cfg = os.path.join(os.getcwd(), 'setup.cfg')
+        setup_cfg = os.path.join(os.path.dirname(os.getcwd()), 'setup.cfg')
 
         parent_template = None
         if os.path.exists(setup_cfg):
@@ -147,7 +154,6 @@ class TemplerLocalCommand(Command):
                 entry_point = entry.load()
                 t = entry_point(entry.name)
                 if show_all or \
-                   parent_template is None or \
                    parent_template in t.parent_templates:
                     templates.append(t)
             except Exception, e:

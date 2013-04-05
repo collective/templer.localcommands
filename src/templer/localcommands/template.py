@@ -18,9 +18,13 @@ class TemplerLocalTemplate(Template):
         """
         the run method
         """
-        (vars['namespace_package'],
-         vars['namespace_package2'],
-         vars['package']) = command.get_parent_namespace_packages()
+        tmp_names = ('namespace_package', 'namespace_package2', 'package')
+        # to avoid calling get_parent_namespace_packages() twice
+        if set(tmp_names) <= set(vars):
+            (vars['namespace_package'],
+             vars['namespace_package2'],
+             vars['package'],
+             dummy_output) = command.get_parent_namespace_packages()
 
         if vars['namespace_package2']:
             vars['package_dotted_name'] = "%s.%s.%s" % \
