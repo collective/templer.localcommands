@@ -57,4 +57,8 @@ class TestLocalCommands(unittest.TestCase):
         os.chdir(os.path.sep.join(['plone.example', 'src']))
         # this should return a list of namespace packages
         namespaces = self.local_cmd.get_parent_namespace_packages()
-        self.assertEqual(('plone', '', 'example'), namespaces)
+        expected = ('plone', '', 'example', 'plone.example/src/plone/example')
+        self.assertEqual(len(namespaces), len(expected))
+        for idx, node in enumerate(expected):
+            found = namespaces[idx]
+            self.assertTrue(found.endswith(node))
