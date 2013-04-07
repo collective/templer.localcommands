@@ -121,12 +121,7 @@ class TemplerLocalCommand(Command):
                 'Please choose one package to inject content into %s' %\
                 packages)
 
-        if namespace_package2:
-            subpath = "%s/%s/%s" % \
-                (namespace_package, namespace_package2, package)
-        else:
-            subpath = "%s/%s" % (namespace_package, package)
-        destination = os.path.abspath(subpath)
+        destination = os.path.join(base_path, package)
 
         return namespace_package, namespace_package2, package, destination
 
