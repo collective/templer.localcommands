@@ -1,5 +1,5 @@
 """
-ZopeSkel local command.
+Templer local command.
 
 Most of the code is a copy/paste from paste.script module
 """
@@ -10,9 +10,33 @@ import pkg_resources
 from templer.core.create import Command
 
 
-class TemplerLocalCommand(Command):
-    """paster command to add content skeleton to plone project"""
+NOT_LOCAL_CONTEXT_WARNING = """
+You have invoked the 'add' command, which runs localcommands, but you are not
+in a context where this is appropriate.  
 
+If you have just generated a new package which supports localcommands, change
+directories so that you are in the same location as the ``setup.py`` file
+for that package and try again
+"""
+NO_TEMPLATE_SUPPORTED_WARNING = """
+You have invoked the 'add' command, which runs localcommands, but the '%s'
+template used to generate this package does not support any localcommands.
+"""
+TEMPLATE_NOT_SUPPORTED_WARNING = """
+You have invoked the 'add' command, requesting the '%s' localcommand, but that
+localcommand is not supported by the '%s' template, which was used to create
+this package.
+
+To see a list of supported localcommands, please invoke the 'add' command with
+the '--list' or '-l' option:
+
+    $ templer add -l
+"""
+
+
+class TemplerLocalCommand(Command):
+    """a command which supports extending a previously created template
+    """
     max_args = 2
     usage = "[template name]"
     summary = "Allows the addition of further templates to an existing package"
@@ -41,11 +65,19 @@ class TemplerLocalCommand(Command):
 
     def __init__(self, command_name):
         self.command_name = command_name
+        self.parent_template = self._get_parent_template()
 
     def command(self):
         """
         command method
         """
+        if self.parent_template is None:
+            # if there is no parent_template, we are not in an appropriate
+            # context, message the user and return with return_code 1
+            self.return_code = 1
+            print NOT_LOCAL_CONTEXT_WARNING
+            return
+            
         self.interactive = 1
         options, args = self.options, self.args
 
@@ -61,6 +93,7 @@ class TemplerLocalCommand(Command):
             self.interactive = False
 
         if len(args) < 1:
+            self.return_code = 1
             print "\n\tError: Need a template name\n"
             return
 
@@ -70,7 +103,21 @@ class TemplerLocalCommand(Command):
          dest_dir) = self.get_parent_namespace_packages()
 
         templates = []
-        self._extend_templates(templates, args[0])
+        self._extend_templates(templates, args[0], first=True)
+
+        # if, after estending the templates we have no templates to run, then
+        # we are in a local context, but the template requested is not 
+        # supported by our parent_template.  message the user and return with
+        # return_code = 1
+        if not templates:
+            self.return_code = 1
+            # Are any templates at all supported by this parent?
+            if not self._get_sub_templates():
+                print NO_TEMPLATE_SUPPORTED_WARNING % self.parent_template
+            else:
+                print TEMPLATE_NOT_SUPPORTED_WARNING % (args[0],
+                                                        self.parent_template)
+            return
 
         templates = [tmpl for name, tmpl in templates]
         for tmpl in templates[::-1]:
@@ -125,16 +172,16 @@ class TemplerLocalCommand(Command):
 
         return namespace_package, namespace_package2, package, destination
 
-    def _list_sub_templates(self, show_all=False):
-        """
-        lists available templates
-        """
-        templates = []
-        parent_template = None
+    def _get_parent_template(self):
+        """read the parent template for this package from setup.cfg
 
-        setup_cfg = os.path.join(os.path.dirname(os.getcwd()), 'setup.cfg')
-
+        if setup.cfg is absent, or missing the required info, return None
+        """
         parent_template = None
+        # this is clumsy and inflexible.  It'd be nice to be able to walk 
+        # up from any location inside a package rather than requiring you 
+        # to be where the setup.cfg file is.
+        setup_cfg = os.path.join(os.getcwd(), 'setup.cfg')
         if os.path.exists(setup_cfg):
             parser = ConfigParser.ConfigParser()
             parser.read(setup_cfg)
@@ -143,18 +190,28 @@ class TemplerLocalCommand(Command):
                     parser.get('templer.local', 'template') or None
             except:
                 pass
+        return parent_template
+
+    def _get_sub_templates(self, get_all=False):
+        templates = []
 
         for entry in self._all_entry_points():
             try:
                 entry_point = entry.load()
                 t = entry_point(entry.name)
-                if show_all or \
-                   parent_template in t.parent_templates:
+                if get_all or self.parent_template in t.parent_templates:
                     templates.append(t)
             except Exception, e:
                 # We will not be stopped!
                 print 'Warning: could not load entry point %s (%s: %s)' % (
                     entry.name, e.__class__.__name__, e)
+        return templates
+
+    def _list_sub_templates(self, show_all=False):
+        """
+        lists available templates
+        """
+        templates = self._get_sub_templates(all=show_all)
 
         print 'Available templates:'
         if not templates:
@@ -168,7 +225,7 @@ class TemplerLocalCommand(Command):
             _marker = " "
             if not template.parent_templates:
                 _marker = '?'
-            elif parent_template not in template.parent_templates:
+            elif self.parent_template not in template.parent_templates:
                 _marker = 'N'
 
             # @@: Wrap description
@@ -187,9 +244,9 @@ class TemplerLocalCommand(Command):
             'templer.templer_sub_template'))
         return self._entry_points
 
-    def _extend_templates(self, templates, tmpl_name):
+    def _extend_templates(self, templates, tmpl_name, first=None):
         """
-        Return ...
+        recursively build the list of templates that must be run
         """
         if '#' in tmpl_name:
             dist_name, tmpl_name = tmpl_name.split('#', 1)
@@ -214,6 +271,14 @@ class TemplerLocalCommand(Command):
             if item_full_name == full_name:
                 # Already loaded
                 return
+
+        # if this is the first time through the loop, we need to check if the
+        # parent template of this run is in the list of parent templates. If
+        # not then we proceed no further.
+        if first:
+            if self.parent_template not in tmpl.parent_templates:
+                return
+
         for req_name in tmpl.required_templates:
             self._extend_templates(templates, req_name)
         templates.append((full_name, tmpl))
