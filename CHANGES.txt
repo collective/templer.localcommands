@@ -4,6 +4,10 @@ Changelog
 1.0b3 (unreleased)
 ------------------
 
+- Remove dependencies on templer.plone.localcommands in tests.  Depend only
+  on this package and templer.core
+  [cewing]
+
 - Determine package namespaces, path, and parent template
   without relying on setuptools egg-info. It is now assumed that
   local commands are being run with the root of the package
