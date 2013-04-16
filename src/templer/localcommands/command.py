@@ -32,6 +32,11 @@ the '--list' or '-l' option:
 
     $ templer add -l
 """
+LOCALCOMMAND_LISTING_HEADER = "Available Templates:"
+NO_COMMANDS_AVAILABLE = "    None available in this context"
+AVAILABLE_MARKER = " "
+UNAVAILABLE_MARKER = "N"
+UNKNOWN_MARKER = "?"
 
 
 class TemplerLocalCommand(Command):
@@ -211,22 +216,22 @@ class TemplerLocalCommand(Command):
         """
         lists available templates
         """
-        templates = self._get_sub_templates(all=show_all)
+        templates = self._get_sub_templates(get_all=show_all)
 
-        print 'Available templates:'
+        print LOCALCOMMAND_LISTING_HEADER
         if not templates:
-            print '  No template'
+            print NO_COMMANDS_AVAILABLE
             return
 
         max_name = max([len(t.name) for t in templates])
         templates.sort(lambda a, b: cmp(a.name, b.name))
 
         for template in templates:
-            _marker = " "
+            _marker = AVAILABLE_MARKER
             if not template.parent_templates:
-                _marker = '?'
+                _marker = UNKNOWN_MARKER
             elif self.parent_template not in template.parent_templates:
-                _marker = 'N'
+                _marker = UNAVAILABLE_MARKER
 
             # @@: Wrap description
             print '  %s %s:%s  %s' % (
