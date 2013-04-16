@@ -1,13 +1,10 @@
 import os
 import shutil
-import sys
 import tempfile
 import unittest2 as unittest
-import StringIO
 import pkg_resources
 
 from templer.core.control_script import Runner
-from templer.core.tests.test_templates import read_sh
 from templer.core.tests.test_templates import templer as templercmd
 from templer.core.tests.test_templates import clean_working_set
 from templer.core.vars import var
@@ -17,6 +14,11 @@ from templer.localcommands import TemplerLocalCommand
 from templer.localcommands.command import NOT_LOCAL_CONTEXT_WARNING
 from templer.localcommands.command import TEMPLATE_NOT_SUPPORTED_WARNING
 from templer.localcommands.command import NO_TEMPLATE_SUPPORTED_WARNING
+from templer.localcommands.command import LOCALCOMMAND_LISTING_HEADER
+from templer.localcommands.command import NO_COMMANDS_AVAILABLE
+from templer.localcommands.command import AVAILABLE_MARKER
+from templer.localcommands.command import UNAVAILABLE_MARKER
+from templer.localcommands.command import UNKNOWN_MARKER
 
 
 class ModuleLocalCommand(TemplerLocalTemplate):
@@ -25,14 +27,18 @@ class ModuleLocalCommand(TemplerLocalTemplate):
     parent_templates = ['basic_namespace', ]
 
     _template_dir = 'templates/module'
+    summary = "Add a module to your package"
 
     vars = [
       var('module_name', 'Module Name',  default="mymodule"), ]
 
 
+MOCK_EP_NAME = 'module'
+
+
 MOCK_EP = """
-module = templer.localcommands.tests.test_localcommand:ModuleLocalCommand
-"""
+%s = templer.localcommands.tests.test_localcommand:ModuleLocalCommand
+""" % MOCK_EP_NAME
 
 
 class TestRunningLocalCommands(unittest.TestCase):
@@ -64,7 +70,7 @@ class TestRunningLocalCommands(unittest.TestCase):
         self.old_ep_map = dist.get_entry_map()
         new_ep_map = self.old_ep_map.copy()
         new_ep_map['templer.templer_sub_template'] = {
-            'module': pkg_resources.EntryPoint.parse(MOCK_EP, dist=dist)
+            MOCK_EP_NAME: pkg_resources.EntryPoint.parse(MOCK_EP, dist=dist)
         }
         dist._ep_map = new_ep_map
         # in addition, the basic namespace class should use_local_commands
@@ -78,29 +84,87 @@ class TestRunningLocalCommands(unittest.TestCase):
         # and finally, return BasicNamespace to original status
         BasicNamespace.use_local_commands = False
 
-    # def test_add_list_option_templates_available(self):
-    #     """verify that the --list option works properly
-    # 
-    #     It should print that no commands are available if none are, or 
-    #     list the available local commands if some are.
-    #     """
-    #     self.fail('must write this test')
-    # 
-    # def test_add_list_option_templates__not_available(self):
-    #     """verify that the --list option works properly
-    # 
-    #     It should print that no commands are available if none are, or 
-    #     list the available local commands if some are.
-    #     """
-    #     self.fail('must write this test')
-    # 
-    # def test_add_list_all_option(self):
-    #     """verify that the --list-all (-a) option works properly
-    #     
-    #     It should list all localcommands regardless of their availability in
-    #     the current context.
-    #     """
-    #     self.fail('must write this test')
+    def test_add_list_option_templates_available(self):
+        """verify that the --list option works properly when commands exist
+    
+        It should list the available local commands
+        """
+        # first, build a project and cd into it:
+        templercmd(" ".join(self.options), silent=True)
+        os.chdir('testing.example')
+        # re-initialize a runner for context sensitivity
+        newrunner = Runner()
+        cmds = ['-l', '--list']
+        for cmd in cmds:
+            actual = templercmd('add %s' % cmd, runner=newrunner, silent=True)
+            # details of our constructed command should be present
+            self.assertTrue(LOCALCOMMAND_LISTING_HEADER in actual)
+            self.assertTrue(MOCK_EP_NAME in actual)
+            self.assertTrue(ModuleLocalCommand.summary in actual)
+    
+    def test_add_list_option_templates__not_available(self):
+        """verify that the --list option works properly when no commands exist
+    
+        It should print that no commands are available if none are
+        """
+        options = ['nested_namespace', 'testing.nested.example',
+                   '--no-interactive']
+        templercmd(" ".join(options), silent=True)
+        os.chdir('testing.nested.example')
+        # re-initialize a runner for context sensitivity
+        newrunner = Runner()
+        cmds = ['-l', '--list']
+        for cmd in cmds:
+            actual = templercmd('add %s' % cmd, runner=newrunner, silent=True)
+            # no listings should be available:
+            self.assertTrue(LOCALCOMMAND_LISTING_HEADER in actual)
+            self.assertTrue(NO_COMMANDS_AVAILABLE in actual)
+    
+    def test_add_list_all_option(self):
+        """verify that the --list-all (-a) option works properly
+        
+        It should list all localcommands regardless of their availability in
+        the current context.
+        """
+        unavailable_lines = 0
+        available_lines = 0
+        # test first with a template that has __no__ local commands
+        options = ['nested_namespace', 'testing.nested.example',
+                   '--no-interactive']
+        templercmd(" ".join(options), silent=True)
+        os.chdir('testing.nested.example')
+        # re-initialize a runner for context sensitivity
+        newrunner = Runner()
+        cmds = ['-a', '--list-all']
+        for cmd in cmds:
+            actual = templercmd('add %s' % cmd, runner=newrunner, silent=True)
+            self.assertTrue(LOCALCOMMAND_LISTING_HEADER in actual)
+            self.assertTrue(MOCK_EP_NAME in actual)
+            self.assertTrue(ModuleLocalCommand.summary in actual)
+            lines = actual.split("\n")
+            if not unavailable_lines:
+                unavailable_lines = len(lines)
+            for line in lines:
+                if MOCK_EP_NAME in line:
+                    self.assertTrue(UNAVAILABLE_MARKER in line)
+        # return to temp dir and try again with template that __has__ some
+        os.chdir(self.temp_dir)
+        templercmd(" ".join(self.options), silent=True)
+        os.chdir("testing.example")
+        # re-initialize a runner for context sensitivity
+        newrunner = Runner()
+        cmds = ['-a', '--list-all']
+        for cmd in cmds:
+            actual = templercmd('add %s' % cmd, runner=newrunner, silent=True)
+            self.assertTrue(LOCALCOMMAND_LISTING_HEADER in actual)
+            self.assertTrue(MOCK_EP_NAME in actual)
+            self.assertTrue(ModuleLocalCommand.summary in actual)
+            lines = actual.split("\n")
+            if not available_lines:
+                available_lines = len(lines)
+            for line in lines:
+                if MOCK_EP_NAME in line:
+                    self.assertTrue(AVAILABLE_MARKER in line)
 
     def test_add_not_in_context(self):
         actual = templercmd("add module --no-interactive", silent=True)
