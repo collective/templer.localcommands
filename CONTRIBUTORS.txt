@@ -1,4 +1,6 @@
 - Cris Ewing, original author
+- David Glick
+- Fulvio Casali
 
 Based on code from zopeskel, contributors to which include:
 
